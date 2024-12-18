@@ -10,7 +10,7 @@ class StockfishModel {
             throw new Error("You already have an active analysis session.");
         }
         console.log(`Starting Stockfish for user ${userId}`);
-        const stockfish = spawn("/home/kush/Documents/chessDB/backend/models/stockfish-17-x86-64-avx2");
+        const stockfish = spawn("/home/kush/chessDB/backend/models/stockfish-17-x86-64-avx2");
         stockfish.stdout.on("data", (data) => {
             console.log(`Stockfish [${userId}]: ${data}`);
         });
