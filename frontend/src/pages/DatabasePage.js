@@ -88,7 +88,6 @@ const DatabasePage = () => {
                         >
                             <p><strong>Date:</strong> {game.Date || "N/A"}</p>
                             <p><strong>Event:</strong> {game.Event || "N/A"}</p>
-                            <p><strong>EventType:</strong> {game.EventType || "N/A"}</p>
                             <p><strong>White:</strong> {game.White || "N/A"}</p>
                             <p><strong>Black:</strong> {game.Black || "N/A"}</p>
                             <p><strong>Result:</strong> {game.Result || "N/A"}</p>
