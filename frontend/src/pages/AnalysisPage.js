@@ -273,6 +273,7 @@ const Analysis = () => {
                         style={{
                             padding: "5px",
                             border: "1px solid #ccc",
+                            overflowX: "auto",
                             width: "400px",
                             height: "200px",
                         }}
@@ -293,6 +294,7 @@ const Analysis = () => {
                         style={{
                             padding: "5px",
                             border: "1px solid #ccc",
+                            overflowX: "auto",
                             width: "400px",
                             height: "200px",
                         }}
