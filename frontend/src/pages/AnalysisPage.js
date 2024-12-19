@@ -21,7 +21,10 @@ const Analysis = () => {
     const decoded = jwtDecode(token);
     const userId = decoded.id;
     const navigate = useNavigate();
-    const shouldStopStockfish = useRef(true);
+
+    useEffect(() => {
+        document.title = 'Analysis';
+    }, []);
 
     const getActiveColor = (fen) => {
         const parts = fen.split(' ');
@@ -130,7 +133,7 @@ const Analysis = () => {
             setCurrentMoveIndex(-1);
             setGameDataLoaded(true);
         }
-    }, [location.state, gameData.Moves]);
+    }, [location.state]);
 
     useEffect(() => {
         const startStockfish = async () => {
@@ -142,7 +145,6 @@ const Analysis = () => {
                 });
                 if (!response.ok) {
                     const errorData = await response.json();
-                    shouldStopStockfish.current = false;
                     navigate(-1);
                     throw new Error(errorData.error || "Failed to start Stockfish session.");
                 }
@@ -152,7 +154,6 @@ const Analysis = () => {
         };
 
         const stopStockfish = async () => {
-            if (!shouldStopStockfish.current) return;
             try {
                 await fetch("/api/stockfish/stop", {
                     method: "POST",
@@ -219,48 +220,121 @@ const Analysis = () => {
         return null;
     };
 
-
     return (
-        <div>
-            <div style={{ display: "flex", flexDirection: "row", height: "80%", width: "80%", margin: "20px" }}>
-                <Chessboard
-                    position={game.fen()}
-                    onPieceDrop={gameDataLoaded ? {} : onDrop}
-                    rePiecesDraggable={!evaluating}
-                />
-                <div style={{ width: "30px", marginLeft: "10px" }}>
-                    {renderEvaluationBar()}
-                    <p style={{ textAlign: "center" }}>
-                        {evaluating ? "Evaluating..." : evaluation.toFixed(2)}
-                    </p>
+        <div
+            style={{
+                padding: "10px",
+                display: "flex",
+                flexDirection: "column",
+                width: "1000px",
+                gap: "20px",
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "10px",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        width: "800px",
+                        gap: "10px",
+                    }}
+                >
+                    <Chessboard
+                        position={game.fen()}
+                        onPieceDrop={gameDataLoaded ? {} : onDrop}
+                        rePiecesDraggable={!evaluating}
+                    />
+                    <div
+                        style={{
+                            width: "20px",
+                            marginLeft: "10px",
+                        }}
+                    >
+                        {renderEvaluationBar()}
+                        <p style={{ textAlign: "center" }}>
+                            {evaluating ? "Evaluating..." : evaluation.toFixed(2)}
+                        </p>
+                    </div>
                 </div>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: "5px",
+                            border: "1px solid #ccc",
+                            width: "400px",
+                            height: "200px",
+                        }}
+                    >
+                        <h4>PGN of Current Game</h4>
+                        <pre
+                            style={{
+                                whiteSpace: "pre-wrap",
+                                wordWrap: "break-word",
+                                overflowWrap: "break-word",
+                                fontSize: "14px",
+                            }}
+                        >
+                            {pgn || "No moves yet"}
+                        </pre>
+                    </div>
+                    <div
+                        style={{
+                            padding: "5px",
+                            border: "1px solid #ccc",
+                            width: "400px",
+                            height: "200px",
+                        }}
+                    >
+                        <h4>Engine Line</h4>
+                        <pre
+                            style={{
+                                whiteSpace: "pre-wrap",
+                                wordWrap: "break-word",
+                                overflowWrap: "break-word",
+                                fontSize: "14px",
+                            }}
+                        >
+                            {evalLine || "No analysis available"}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "20px",
+                }}
+            >
                 <div>
-                    <div style={{ border: "1px solid #ccc", padding: "10px", height: "300px", width: "800px" }}>
-                        <h3>Engine Line</h3>
-                        <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word", overflowWrap: "break-word" }}>{evalLine || "No analysis available"}</pre>
-                    </div>
-                    <div>
-                        <button onClick={goToPreviousMove} disabled={currentMoveIndex < 0}>
-                            Previous
-                        </button>
-                        <button onClick={goToNextMove} disabled={currentMoveIndex >= moveHistory.length - 1}>
-                            Next
-                        </button>
-                    </div>
+                    <button onClick={goToPreviousMove} disabled={currentMoveIndex < 0}>
+                        Previous
+                    </button>
+                    <button onClick={goToNextMove} disabled={currentMoveIndex >= moveHistory.length - 1}>
+                        Next
+                    </button>
                     <div style={{ marginTop: "10px" }}>
                         <h3>Current Move</h3>
                         <p>
                             {currentMoveIndex >= 0
-                                ? `Move ${(currentMoveIndex) % 2 ? (currentMoveIndex + 1) / 2 : (currentMoveIndex + 2) / 2}: ${moveHistory[currentMoveIndex].san}`
+                                ? `Move ${currentMoveIndex % 2 ? (currentMoveIndex + 1) / 2 : (currentMoveIndex + 2) / 2}: ${moveHistory[currentMoveIndex].san}`
                                 : "Game Start"}
                         </p>
                     </div>
-                    {renderGameDetails()}
                 </div>
-            </div>
-            <div style={{ border: "1px solid #ccc", padding: "10px", maxHeight: "200px", overflowY: "auto", width: "600px" }}>
-                <h3>PGN of Current Game</h3>
-                <pre>{pgn || "No moves yet"}</pre>
+                {renderGameDetails()}
             </div>
         </div>
     );

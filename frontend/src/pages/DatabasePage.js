@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const DatabasePage = () => {
@@ -8,6 +8,10 @@ const DatabasePage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+
+    useEffect(() => {
+        document.title = 'Database';
+    }, []);
 
     const fetchGames = async (page) => {
         setLoading(true);
