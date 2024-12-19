@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const Register = () => {
+    useEffect(() => {
+        document.title = 'Register';
+    }, []);
+
     const [formData, setFormData] = useState({ name: "", email: "", password: "" });
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
