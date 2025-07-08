@@ -3,6 +3,9 @@
 # dependencies
 /backend/node_modules
 /frontend/node_modules
+/frontend/public/stockfish-nnue-16.wasm
+/frontend/public/stockfish-nnue-16.js
+/frontend/public/nn-5af11540bbfe.nnue
 /.pnp
 .pnp.js
 
@@ -10,10 +13,11 @@
 /coverage
 
 # production
-/frontend/build
+/frontend/dist
 
 # misc
 /backend/.env
+/backend/stockfish
 .DS_Store
 .env.local
 .env.development.local

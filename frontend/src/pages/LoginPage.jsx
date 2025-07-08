@@ -33,8 +33,8 @@ const Login = ({ setIsLoggedIn }) => {
     };
 
     return (
-        <div style={{ padding: "20px" }}>
-            <div></div>
+        <div style={{ padding: "20px", textAlign: 'center' }}>
+            <h1>Login</h1>
             <form onSubmit={handleSubmit}>
                 <input name="email" type="email" placeholder="Email" onChange={handleChange} />
                 <input name="password" type="password" placeholder="Password" onChange={handleChange} />

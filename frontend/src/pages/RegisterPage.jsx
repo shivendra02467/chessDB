@@ -31,7 +31,8 @@ const Register = () => {
     };
 
     return (
-        <div style={{ padding: "20px" }}>
+        <div style={{ padding: "20px", textAlign: 'center' }}>
+            <h1>Register</h1>
             <form onSubmit={handleSubmit}>
                 <input name="name" type="text" placeholder="Name" onChange={handleChange} />
                 <input name="email" type="email" placeholder="Email" onChange={handleChange} />
