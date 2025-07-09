@@ -149,20 +149,19 @@ const Analysis = () => {
     }
 
     const onDrop = (sourceSquare, targetSquare) => {
-        const move = game.move({
-            from: sourceSquare,
-            to: targetSquare,
-            promotion: "q",
-        });
-
-        if (move) {
+        try {
+            game.move({
+                from: sourceSquare,
+                to: targetSquare,
+                promotion: "q",
+            });
             setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
             setFen(game.fen());
             setMoveHistory(game.history({ verbose: true }));
             setCurrentMoveIndex(game.history().length - 1);
             setMoveFrom('');
             setOptionSquares({});
-        } else {
+        } catch {
             return;
         }
     };
