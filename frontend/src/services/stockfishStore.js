@@ -23,7 +23,7 @@ export const reset = fen => {
 };
 
 export const commitLine = parsed => {
-    const { depth, k, score, pvUci } = parsed;
+    const { depth, k, score, pvUci, pvSan } = parsed;
     if (depth < state.depth) return;
 
     if (depth > state.depth) {
@@ -31,7 +31,7 @@ export const commitLine = parsed => {
         state.lines = [];
     }
 
-    state.lines[k - 1] = { score, pvUci };
+    state.lines[k - 1] = { score, pvUci, pvSan };
     if (k === 1) state.bestMove = pvUci.split(' ')[0];
     emit();
 };

@@ -56,7 +56,17 @@ const Analysis = () => {
             ? color * scoreV
             : color * scoreV > 0 ? 32000 - color * scoreV : -32000 - color * scoreV;
 
-        return { depth, k, score, pvUci };
+        const tempGame = new Chess(fen);
+        const moves = pvUci.split(" ");
+        const pvSanArray = [];
+        moves.forEach((move) => {
+            const moveObj = tempGame.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move.slice(4) || "q" });
+            if (moveObj) {
+                pvSanArray.push(moveObj.san);
+            }
+        });
+        const pvSan = pvSanArray.join(" ");
+        return { depth, k, score, pvUci, pvSan };
     }
 
     function startAnalysis(sfWorker, fen) {
@@ -67,7 +77,6 @@ const Analysis = () => {
         sfWorker.postMessage('go depth 30');
 
         sfWorker.onmessage = ({ data }) => {
-            console.log(data);
             const parsed = parseInfo(data, fen);
             if (parsed) commitLine(parsed);
         };
@@ -373,7 +382,7 @@ const Analysis = () => {
                         height: "200px",
                     }}
                 >
-                    <strong>Engine Line</strong>
+                    <strong>Engine Lines</strong>
                     <pre
                         style={{
                             whiteSpace: "pre-wrap",
@@ -382,9 +391,9 @@ const Analysis = () => {
                             fontSize: "14px",
                         }}
                     >
-                        {"--->" + s?.lines?.[0]?.pvUci || "No analysis available"}
-                        {"\n--->" + s?.lines?.[1]?.pvUci || "No analysis available"}
-                        {"\n--->" + s?.lines?.[2]?.pvUci || "No analysis available"}
+                        <p>[{s?.lines?.[0]?.score / 100}] {s?.lines?.[0]?.pvSan}</p>
+                        <p>[{s?.lines?.[1]?.score / 100}] {s?.lines?.[1]?.pvSan}</p>
+                        <p>[{s?.lines?.[2]?.score / 100}] {s?.lines?.[2]?.pvSan}</p>
                     </pre>
                 </div>
             </div>
