@@ -1,60 +1,88 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Chess } from "chess.js";
-import { Chessboard } from "react-chessboard";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useHotkeys } from 'react-hotkeys-hook';
-import { jwtDecode } from "jwt-decode";
+import { Chessboard } from "react-chessboard";
+import { Chess } from "chess.js";
+import { reset, getState, commitLine, subscribe } from "../services/stockfishStore";
+import { initEnginePool, getNextEngine, cleanupEngines } from "../services/stockfishWorker";
 
 const Analysis = () => {
     const location = useLocation();
     const { gameData } = location.state || {};
     const [game] = useState(new Chess());
-    const [fen, setFen] = useState("");
+    const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     const [pgn, setPgn] = useState("");
     const [moveHistory, setMoveHistory] = useState([]);
     const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-    const [evalLine, setEvalLine] = useState("");
-    const [evalu, setEvalu] = useState("");
-    const [evaluation, setEvaluation] = useState(0);
-    const [evaluating, setEvaluating] = useState(false);
     const [gameDataLoaded, setGameDataLoaded] = useState(false);
-    const token = localStorage.getItem("token");
-    const decoded = jwtDecode(token);
-    const userId = decoded.id;
-    const navigate = useNavigate();
-    const sfRef = useRef(null);
+    const [s, setS] = useState({});
     const [moveFrom, setMoveFrom] = useState("");
-    const [bestMove, setBestMove] = useState("");
     const [optionSquares, setOptionSquares] = useState({});
 
     useEffect(() => {
         document.title = 'Analysis';
+
+        const sync = () => setS(getState());
+        sync();
+        const unsubscribe = subscribe(sync);
+
+        initEnginePool();
+
+        return () => {
+            cleanupEngines();
+            unsubscribe;
+        };
     }, []);
 
-    useEffect(() => {
-        const sf = new Worker('/stockfish-nnue-16.js');
-        sf.onmessage = e => { console.log(e.data); setEvalu(e.data); }
-        sf.postMessage('setoption name Use NNUE value true');
-        sf.postMessage('uci');
-        sf.postMessage(`position fen ${fen}`);
-        sf.postMessage('go depth 20');
-        sfRef.current = sf;
-        return () => sf.terminate();
-    }, []);
+    function parseInfo(line, fen) {
+        if (!line.startsWith('info depth')) return null;
 
+        const t = line.trim().split(/\s+/);
+        const get = (key, offset = 1) => {
+            const i = t.indexOf(key);
+            return i === -1 ? null : t[i + offset];
+        };
+
+        const depth = +get('depth');
+        const k = +get('multipv');
+        const scoreT = get('score');
+        const scoreV = +get('score', 2);
+        const pvIdx = t.indexOf('pv');
+        const pvUci = pvIdx === -1 ? '' : t.slice(pvIdx + 1).join(' ');
+
+        if (!k || !pvUci) return null;
+        const color = fen.split(' ')[1] === "w" ? 1 : -1;
+        const score = scoreT === 'cp'
+            ? color * scoreV
+            : color * scoreV > 0 ? 32000 - color * scoreV : -32000 - color * scoreV;
+
+        return { depth, k, score, pvUci };
+    }
+
+    function startAnalysis(sfWorker, fen) {
+        reset(fen);
+
+        sfWorker.postMessage('stop');
+        sfWorker.postMessage(`position fen ${fen}`);
+        sfWorker.postMessage('go depth 30');
+
+        sfWorker.onmessage = ({ data }) => {
+            console.log(data);
+            const parsed = parseInfo(data, fen);
+            if (parsed) commitLine(parsed);
+        };
+    }
 
     function getMoveOptions(square) {
         const moves = game.moves({
             square,
             verbose: true
         });
-
         if (moves.length === 0) {
             setOptionSquares({});
             return false;
         }
         const newSquares = {};
-
         for (const move of moves) {
             newSquares[move.to] = {
                 background: game.get(move.to) && game.get(move.to)?.color !== game.get(square)?.color ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // larger circle for capturing
@@ -68,6 +96,7 @@ const Analysis = () => {
         setOptionSquares(newSquares);
         return true;
     }
+
     function onSquareClick(
         square,
         piece
@@ -89,7 +118,6 @@ const Analysis = () => {
             setMoveFrom(hasMoveOptions ? square : '');
             return;
         }
-
         try {
             game.move({
                 from: moveFrom,
@@ -103,90 +131,35 @@ const Analysis = () => {
             }
             return;
         }
-
-        sfRef.current.postMessage('stop');
         setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
         setFen(game.fen());
         setMoveHistory(game.history({ verbose: true }));
         setCurrentMoveIndex(game.history().length - 1);
-
         setMoveFrom('');
         setOptionSquares({});
     }
 
-    const parseUciLine = (uciLine) => {
-        const tempGame = new Chess(game.fen());
-        const moves = uciLine.split(" ");
-        const notationMoves = [];
-        moves.forEach((move) => {
-            const moveObj = tempGame.move({ from: move.slice(0, 2), to: move.slice(2, 4), promotion: move.slice(4) || "q" });
-            if (moveObj) {
-                notationMoves.push(moveObj.san);
-            }
-        });
-        return notationMoves.join(" ");
-    }
-
-    // const fetchEvaluation = useCallback(async (fen) => {
-    //     setEvaluating(true);
-    //     try {
-    //         const { evalString } = await analyzeGame(userId, fen);
-    //         const evalMatch = evalString.match(/info depth 20 .*? score (cp|mate) (-?\d+)/);
-    //         const uciLine = evalString.match(/info depth 20 .*? pv ((?:[a-h][1-8][a-h][1-8]\s?)+)/);
-    //         const scoreType = evalMatch[1];
-    //         const scoreValue = parseInt(evalMatch[2], 10);
-    //         var score = 0;
-    //         if (scoreType === "cp") {
-    //             const parts = fen.split(' ');
-    //             const color = parts[1] === "w" ? 1 : -1;
-    //             score = color * scoreValue / 100;
-    //         } else if (scoreType === "mate") {
-    //             const parts = fen.split(' ');
-    //             const color = parts[1] === "w" ? 1 : -1;
-    //             score = color * scoreValue > 0 ? 100 : -100;
-    //         }
-    //         setEvalLine(parseUciLine(uciLine[1]));
-    //         setEvaluation(score);
-    //     } catch (error) {
-    //         console.error("Error fetching evaluation:", error);
-    //         setEvaluation(0);
-    //     }
-    //     setEvaluating(false);
-    // }, [fen]);
-
     const onDrop = (sourceSquare, targetSquare) => {
-        try {
-            const move = game.move({
-                from: sourceSquare,
-                to: targetSquare,
-                promotion: "q",
-            });
+        const move = game.move({
+            from: sourceSquare,
+            to: targetSquare,
+            promotion: "q",
+        });
 
-            if (move) {
-                sfRef.current.postMessage('stop');
-                setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
-                setFen(game.fen());
-                setMoveHistory(game.history({ verbose: true }));
-                setCurrentMoveIndex(game.history().length - 1);
-                setMoveFrom('');
-                setOptionSquares({});
-            } else {
-                alert("Invalid move!");
-            }
-        } catch (error) {
-            alert("Invalid move!");
+        if (move) {
+            setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
+            setFen(game.fen());
+            setMoveHistory(game.history({ verbose: true }));
+            setCurrentMoveIndex(game.history().length - 1);
+            setMoveFrom('');
+            setOptionSquares({});
+        } else {
+            return;
         }
     };
 
-    useEffect(() => {
-        if (sfRef.current) {
-            sfRef.current.postMessage(`position fen ${fen}`);
-            sfRef.current.postMessage('go depth 20');
-        }
-    }, [fen]);
     const goToPreviousMove = () => {
-        if (currentMoveIndex >= 0 && !evaluating) {
-            sfRef.current.postMessage('stop');
+        if (currentMoveIndex >= 0) {
             game.undo();
             setCurrentMoveIndex((prev) => prev - 1);
             setFen(game.fen());
@@ -194,10 +167,9 @@ const Analysis = () => {
     };
 
     const goToNextMove = () => {
-        if (currentMoveIndex < moveHistory.length - 1 && !evaluating) {
+        if (currentMoveIndex < moveHistory.length - 1) {
             const nextMove = moveHistory[currentMoveIndex + 1];
             if (nextMove) {
-                sfRef.current.postMessage('stop');
                 game.move(nextMove);
                 setCurrentMoveIndex((prev) => prev + 1);
                 setFen(game.fen());
@@ -209,25 +181,15 @@ const Analysis = () => {
     useHotkeys('left, backspace', goToPreviousMove);
 
     useEffect(() => {
-        const evalMatch = evalu.match(/info depth .*? score (cp|mate) (-?\d+)/);
-        const uciLine = evalu.match(/info depth .*? pv ((?:[a-h][1-8][a-h][1-8]\s?)+)/);
-        if (evalMatch) {
-            const scoreType = evalMatch[1];
-            const scoreValue = parseInt(evalMatch[2], 10);
-            var score = 0;
-            if (scoreType === "cp") {
-                const parts = fen.split(' ');
-                const color = parts[1] === "w" ? 1 : -1;
-                score = color * scoreValue;
-            } else if (scoreType === "mate") {
-                const parts = fen.split(' ');
-                const color = parts[1] === "w" ? 1 : -1;
-                score = color * scoreValue > 0 ? 32000 - scoreValue : scoreValue - 32000;
-            }
-            setEvaluation(score);
-        }
-        if (uciLine) { setEvalLine(parseUciLine(uciLine[1])); setBestMove(uciLine[1].split(' ')[0]); }
-    }, [evalu]);
+        const sf = getNextEngine();
+        startAnalysis(sf, fen);
+
+        return () => {
+            sf.postMessage('stop');
+            sf.onmessage = null;
+        };
+    }, [fen]);
+
     useEffect(() => {
         if (location.state) {
             const newGame = new Chess();
@@ -247,46 +209,10 @@ const Analysis = () => {
             setCurrentMoveIndex(-1);
             setGameDataLoaded(true);
         }
-    }, [location.state]);
-    // useEffect(() => {
-    //     const startStockfish = async () => {
-    //         try {
-    //             const response = await fetch("/api/stockfish/start", {
-    //                 method: "POST",
-    //                 headers: { "Content-Type": "application/json" },
-    //                 body: JSON.stringify({ userId }),
-    //             });
-    //             if (!response.ok) {
-    //                 const errorData = await response.json();
-    //                 navigate(-1);
-    //                 throw new Error(errorData.error || "Failed to start Stockfish session.");
-    //             }
-    //         } catch (error) {
-    //             alert(error);
-    //         }
-    //     };
-
-    //     const stopStockfish = async () => {
-    //         try {
-    //             await fetch("/api/stockfish/stop", {
-    //                 method: "POST",
-    //                 headers: { "Content-Type": "application/json" },
-    //                 body: JSON.stringify({ userId }),
-    //             });
-    //         } catch (error) {
-    //             console.error("Error stopping Stockfish:", error);
-    //         }
-    //     };
-
-    //     startStockfish();
-    //     fetchEvaluation(fen);
-
-    //     return () => {
-    //         stopStockfish();
-    //     };
-    // }, [userId, navigate]);
+    }, []);
 
     const renderEvaluationBar = () => {
+        const evaluation = s?.lines?.[0]?.score || 0;
         const evaluationHeight = Math.abs(evaluation) >= 31900 ? (evaluation > 0 ? 100 : 0) : (50 * (1 + (2 / Math.PI) * Math.atan(evaluation / 384)));
         return (
             <div
@@ -317,7 +243,7 @@ const Analysis = () => {
                         textAlign: 'center',
                     }}
                 >
-                    {evaluating ? "..." : (evaluation / 100).toFixed(2)}
+                    {(evaluation / 100).toFixed(2)}
                 </div>
             </div>
         );
@@ -363,12 +289,11 @@ const Analysis = () => {
                     onSquareClick={gameDataLoaded ? {} : onSquareClick}
                     position={game.fen()}
                     customSquareStyles={optionSquares}
-                    arePiecesDraggable={!evaluating}
                     customArrowColor="rgb(0,128,0)"
                     customArrows={
-                        bestMove ? [[
-                            bestMove.substring(0, 2),
-                            bestMove.substring(2, 4),
+                        s.bestMove ? [[
+                            s.bestMove.substring(0, 2),
+                            s.bestMove.substring(2, 4),
                             'rgb(0,128,0)'
                         ]]
                             : []
@@ -457,7 +382,9 @@ const Analysis = () => {
                             fontSize: "14px",
                         }}
                     >
-                        {evalLine || "No analysis available"}
+                        {"--->" + s?.lines?.[0]?.pvUci || "No analysis available"}
+                        {"\n--->" + s?.lines?.[1]?.pvUci || "No analysis available"}
+                        {"\n--->" + s?.lines?.[2]?.pvUci || "No analysis available"}
                     </pre>
                 </div>
             </div>
