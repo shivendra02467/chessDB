@@ -1,8 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+/backend/package-lock.json
 /backend/node_modules
 /frontend/node_modules
+/frontend/package-lock.json
 /frontend/public/stockfish-nnue-16.wasm
 /frontend/public/stockfish-nnue-16.js
 /frontend/public/nn-5af11540bbfe.nnue
