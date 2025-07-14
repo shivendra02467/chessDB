@@ -9,15 +9,19 @@ import { initEnginePool, getNextEngine, cleanupEngines } from "../services/stock
 const Analysis = () => {
     const location = useLocation();
     const { gameData } = location.state || {};
-    const [game] = useState(new Chess());
-    const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    const [pgn, setPgn] = useState("");
-    const [moveHistory, setMoveHistory] = useState([]);
-    const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
     const [gameDataLoaded, setGameDataLoaded] = useState(false);
     const [s, setS] = useState({});
     const [moveFrom, setMoveFrom] = useState("");
     const [optionSquares, setOptionSquares] = useState({});
+    const gameRef = useRef(new Chess());
+    const game = gameRef.current;
+    const [isMobile, setIsMobile] = useState(false);
+    const [fen, setFen] = useState(game.fen());
+
+    useEffect(() => {
+        const isTouch = window.matchMedia("(pointer: coarse)").matches;
+        setIsMobile(isTouch);
+    }, []);
 
     useEffect(() => {
         document.title = 'Analysis';
@@ -30,11 +34,11 @@ const Analysis = () => {
 
         return () => {
             cleanupEngines();
-            unsubscribe;
+            unsubscribe();
         };
     }, []);
 
-    function parseInfo(line, fen) {
+    const parseInfo = (line, fen) => {
         if (!line.startsWith('info depth')) return null;
 
         const t = line.trim().split(/\s+/);
@@ -67,9 +71,9 @@ const Analysis = () => {
         });
         const pvSan = pvSanArray.join(" ");
         return { depth, k, score, pvUci, pvSan };
-    }
+    };
 
-    function startAnalysis(sfWorker, fen) {
+    const startAnalysis = (sfWorker, fen) => {
         reset(fen);
 
         sfWorker.postMessage('stop');
@@ -80,9 +84,9 @@ const Analysis = () => {
             const parsed = parseInfo(data, fen);
             if (parsed) commitLine(parsed);
         };
-    }
+    };
 
-    function getMoveOptions(square) {
+    const getMoveOptions = (square) => {
         const moves = game.moves({
             square,
             verbose: true
@@ -104,12 +108,12 @@ const Analysis = () => {
         };
         setOptionSquares(newSquares);
         return true;
-    }
+    };
 
-    function onSquareClick(
+    const onSquareClick = ({
         square,
         piece
-    ) {
+    }) => {
         if (!moveFrom && piece) {
             const hasMoveOptions = getMoveOptions(square);
             if (hasMoveOptions) {
@@ -133,6 +137,12 @@ const Analysis = () => {
                 to: square,
                 promotion: 'q'
             });
+            // setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
+            setFen(game.fen());
+            // setMoveHistory(game.history({ verbose: true }));
+            // setCurrentMoveIndex(game.history().length - 1);
+            setMoveFrom('');
+            setOptionSquares({});
         } catch {
             const hasMoveOptions = getMoveOptions(square);
             if (hasMoveOptions) {
@@ -140,46 +150,40 @@ const Analysis = () => {
             }
             return;
         }
-        setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
-        setFen(game.fen());
-        setMoveHistory(game.history({ verbose: true }));
-        setCurrentMoveIndex(game.history().length - 1);
-        setMoveFrom('');
-        setOptionSquares({});
-    }
 
-    const onDrop = (sourceSquare, targetSquare) => {
+    };
+
+    const onPieceDrop = ({
+        sourceSquare,
+        targetSquare
+    }) => {
         try {
             game.move({
                 from: sourceSquare,
                 to: targetSquare,
                 promotion: "q",
             });
-            setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
             setFen(game.fen());
-            setMoveHistory(game.history({ verbose: true }));
-            setCurrentMoveIndex(game.history().length - 1);
             setMoveFrom('');
             setOptionSquares({});
+            return true;
         } catch {
-            return;
+            return false;
         }
     };
 
     const goToPreviousMove = () => {
-        if (currentMoveIndex >= 0) {
+        if (game.history().length - 1 >= 0) {
             game.undo();
-            setCurrentMoveIndex((prev) => prev - 1);
             setFen(game.fen());
         }
     };
 
     const goToNextMove = () => {
-        if (currentMoveIndex < moveHistory.length - 1) {
-            const nextMove = moveHistory[currentMoveIndex + 1];
+        if (gameDataLoaded && game.history().length - 1 < gameData.Moves.length) {
+            const nextMove = gameData.Moves[game.history().length];
             if (nextMove) {
-                game.move(nextMove);
-                setCurrentMoveIndex((prev) => prev + 1);
+                game.move({ from: nextMove.slice(0, 2), to: nextMove.slice(2, 4) });
                 setFen(game.fen());
             }
         }
@@ -191,7 +195,6 @@ const Analysis = () => {
     useEffect(() => {
         const sf = getNextEngine();
         startAnalysis(sf, fen);
-
         return () => {
             sf.postMessage('stop');
             sf.onmessage = null;
@@ -200,21 +203,6 @@ const Analysis = () => {
 
     useEffect(() => {
         if (location.state) {
-            const newGame = new Chess();
-            for (const move of gameData.Moves) {
-                const result = newGame.move({ from: move.slice(0, 2), to: move.slice(2, 4) });
-                if (!result) {
-                    console.error("Invalid move:", move);
-                    break;
-                }
-            }
-            setPgn(newGame.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
-            setMoveHistory(newGame.history({ verbose: true }));
-            while (newGame.undo() !== null) {
-                newGame.undo();
-            }
-            setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            setCurrentMoveIndex(-1);
             setGameDataLoaded(true);
         }
     }, []);
@@ -274,6 +262,19 @@ const Analysis = () => {
         return null;
     };
 
+    const Options = {
+        onPieceDrop: gameDataLoaded ? {} : onPieceDrop,
+        onSquareClick: gameDataLoaded ? {} : onSquareClick,
+        allowDragging: !isMobile,
+        position: fen,
+        squareStyles: optionSquares,
+        arrows: s.bestMove ? [{
+            startSquare: s.bestMove.substring(0, 2),
+            endSquare: s.bestMove.substring(2, 4),
+            color: 'rgb(0,128,0)'
+        }] : []
+    };
+
     return (
         <div
             style={{
@@ -285,7 +286,7 @@ const Analysis = () => {
             }}
         >
             {renderGameDetails()}
-            <div
+            < div
                 style={{
                     display: "flex",
                     width: "600px",
@@ -293,24 +294,12 @@ const Analysis = () => {
                 }}
             >
                 <Chessboard
-                    onPieceDrop={gameDataLoaded ? {} : onDrop}
-                    onSquareClick={gameDataLoaded ? {} : onSquareClick}
-                    position={game.fen()}
-                    customSquareStyles={optionSquares}
-                    customArrowColor="rgb(0,128,0)"
-                    customArrows={
-                        s.bestMove ? [[
-                            s.bestMove.substring(0, 2),
-                            s.bestMove.substring(2, 4),
-                            'rgb(0,128,0)'
-                        ]]
-                            : []
-                    }
+                    options={Options}
                 />
                 <div>
                     {renderEvaluationBar()}
                 </div>
-            </div>
+            </div >
             <div
                 style={{
                     display: 'flex',
@@ -320,7 +309,7 @@ const Analysis = () => {
             >
                 <button
                     onClick={goToPreviousMove}
-                    disabled={currentMoveIndex < 0}
+                    disabled={game.history().length - 1 < 0}
                     style={{
                         padding: "5px 15px",
                         cursor: "pointer",
@@ -329,13 +318,13 @@ const Analysis = () => {
                     Prev
                 </button>
                 <div>
-                    <strong>Move:</strong>{currentMoveIndex >= 0
-                        ? ` ${currentMoveIndex % 2 ? (currentMoveIndex + 1) / 2 : (currentMoveIndex + 2) / 2}. ${moveHistory[currentMoveIndex].san}`
+                    <strong>Move:</strong>{game.history().length - 1 >= 0
+                        ? ` ${(game.history().length - 1) % 2 ? (game.history().length) / 2 : (game.history().length + 1) / 2}. ${game.history({ verbose: true })[game.history().length - 1].san}`
                         : " Start"}
                 </div>
                 <button
                     onClick={goToNextMove}
-                    disabled={currentMoveIndex >= moveHistory.length - 1}
+                    disabled={!gameDataLoaded || game.history().length - 1 >= gameData.Moves.length - 1}
                     style={{
                         padding: "5px 15px",
                         cursor: "pointer",
@@ -369,7 +358,7 @@ const Analysis = () => {
                             fontSize: "14px",
                         }}
                     >
-                        {pgn || "No moves yet"}
+                        {game.pgn().replace(/^\[.*\]\s*$/gm, '').trim() || "No moves yet"}
                     </pre>
                 </div>
                 <div
@@ -396,7 +385,7 @@ const Analysis = () => {
                     </pre>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

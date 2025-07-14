@@ -14,7 +14,7 @@ export function initEnginePool() {
     for (let i = 0; i < ENGINE_COUNT; i++) {
         const sf = new Worker('/stockfish-nnue-16.js', { type: 'module' });
         sf.postMessage('uci');
-        sf.postMessage('setoption name Use NNUE value true');
+        // sf.postMessage('setoption name Use NNUE value true');
         sf.postMessage('setoption name MultiPV value 3');
         engines.push(sf);
     }
