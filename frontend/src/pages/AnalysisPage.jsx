@@ -8,7 +8,9 @@ import { initEnginePool, getNextEngine, cleanupEngines } from "../services/stock
 
 const Analysis = () => {
     const location = useLocation();
-    const { gameData } = location.state || {};
+    const [gameData, setGameData] = useState(location.state?.gameData || {
+        Moves: []
+    });
     const [gameDataLoaded, setGameDataLoaded] = useState(false);
     const [s, setS] = useState({});
     const [moveFrom, setMoveFrom] = useState("");
@@ -132,13 +134,15 @@ const Analysis = () => {
             return;
         }
         try {
-            game.move({
+            const move = game.move({
                 from: moveFrom,
                 to: square,
                 promotion: 'q'
             });
             // setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
             setFen(game.fen());
+            const moves = [...gameData.Moves, move.from + move.to];
+            setGameData({ Moves: moves });
             // setMoveHistory(game.history({ verbose: true }));
             // setCurrentMoveIndex(game.history().length - 1);
             setMoveFrom('');
@@ -158,12 +162,14 @@ const Analysis = () => {
         targetSquare
     }) => {
         try {
-            game.move({
+            const move = game.move({
                 from: sourceSquare,
                 to: targetSquare,
                 promotion: "q",
             });
             setFen(game.fen());
+            const moves = [...gameData.Moves, move.from + move.to];
+            setGameData({ Moves: moves });
             setMoveFrom('');
             setOptionSquares({});
             return true;
@@ -180,7 +186,7 @@ const Analysis = () => {
     };
 
     const goToNextMove = () => {
-        if (gameDataLoaded && game.history().length - 1 < gameData.Moves.length) {
+        if (game.history().length - 1 < gameData.Moves.length) {
             const nextMove = gameData.Moves[game.history().length];
             if (nextMove) {
                 game.move({ from: nextMove.slice(0, 2), to: nextMove.slice(2, 4) });
@@ -265,7 +271,7 @@ const Analysis = () => {
     const Options = {
         onPieceDrop: gameDataLoaded ? {} : onPieceDrop,
         onSquareClick: gameDataLoaded ? {} : onSquareClick,
-        allowDragging: !isMobile,
+        allowDragging: !gameDataLoaded && !isMobile,
         position: fen,
         squareStyles: optionSquares,
         arrows: s.bestMove ? [{
@@ -324,7 +330,7 @@ const Analysis = () => {
                 </div>
                 <button
                     onClick={goToNextMove}
-                    disabled={!gameDataLoaded || game.history().length - 1 >= gameData.Moves.length - 1}
+                    disabled={game.history().length >= gameData.Moves.length}
                     style={{
                         padding: "5px 15px",
                         cursor: "pointer",
