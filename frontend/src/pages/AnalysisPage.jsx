@@ -139,12 +139,9 @@ const Analysis = () => {
                 to: square,
                 promotion: 'q'
             });
-            // setPgn(game.pgn().replace(/^\[.*\]\s*$/gm, '').trim());
             setFen(game.fen());
             const moves = [...gameData.Moves, move.from + move.to];
             setGameData({ Moves: moves });
-            // setMoveHistory(game.history({ verbose: true }));
-            // setCurrentMoveIndex(game.history().length - 1);
             setMoveFrom('');
             setOptionSquares({});
         } catch {
@@ -221,7 +218,6 @@ const Analysis = () => {
                 style={{
                     width: "32px",
                     height: "100%",
-                    background: "lightgray",
                     position: "relative",
                 }}
             >
@@ -231,7 +227,7 @@ const Analysis = () => {
                         bottom: `${evaluationHeight}%`,
                         height: `${100 - evaluationHeight}%`,
                         width: "100%",
-                        background: "#000000",
+                        background: "#444444",
                     }}
                 />
                 <div
@@ -242,6 +238,7 @@ const Analysis = () => {
                         width: "100%",
                         background: "#bbbbbb",
                         fontSize: '12px',
+                        color: '#000000',
                         textAlign: 'center',
                     }}
                 >

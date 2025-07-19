@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../authContext";
 
-const Login = ({ setIsLoggedIn }) => {
+const Login = () => {
+    const { login } = useAuth();
+
     useEffect(() => {
         document.title = 'Login';
     }, []);
@@ -19,9 +22,7 @@ const Login = ({ setIsLoggedIn }) => {
             });
             const data = await response.json();
             if (response.ok) {
-                localStorage.setItem("token", data.token);
-                setIsLoggedIn(true);
-                window.location.href = "/";
+                login(data.token);
                 alert("Login successful!");
             } else {
                 alert(data.message);

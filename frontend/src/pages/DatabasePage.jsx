@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import jsxRuntime from "react/jsx-runtime";
 
 const DatabasePage = () => {
     const [searchQuery, setSearchQuery] = useState("");
@@ -9,6 +8,7 @@ const DatabasePage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const [token,] = useState(() => localStorage.getItem('token'));
 
     useEffect(() => {
         document.title = 'Database';
@@ -20,17 +20,17 @@ const DatabasePage = () => {
         try {
             const response = await fetch(`/api/games`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ searchQuery, page }),
             });
-            if (!response.ok) {
-                throw new Error("Failed to fetch games");
-            }
             const data = await response.json();
-            setGames(data.games)
-        } catch (err) {
-            console.error("Error fetching games:", err);
-            setError("Failed to load games. Please try again.");
+            if (!response.ok) {
+                setError(data.message);
+            } else {
+                setGames(data.games)
+            }
+        } catch (error) {
+            console.error("Error fetching games:", error);
         } finally {
             setLoading(false);
         }

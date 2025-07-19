@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
+import { useAuth } from "../authContext";
 
-const Home = ({ isLoggedIn }) => {
+const Home = () => {
+    const { isLoggedIn } = useAuth();
+
     useEffect(() => {
         document.title = 'chessDB';
     }, []);

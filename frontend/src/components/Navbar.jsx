@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../authContext';
 
-const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        setIsLoggedIn(false);
-        window.location.href = "/";
-    };
+const Navbar = () => {
+    const { isLoggedIn, logout } = useAuth();
+
+    const [dark, setDark] = useState(() =>
+        localStorage.getItem('theme') === 'dark'
+    );
+
+    useEffect(() => {
+        document.body.classList.toggle('dark', dark);
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+    }, [dark]);
+
     return (
         <nav style={{
             display: 'flex',
@@ -30,6 +37,10 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
                 }}>About</Link>
                 {isLoggedIn && (
                     <>
+                        <Link to="/play" style={{
+                            color: '#000000',
+                            textDecoration: 'none',
+                        }}>Play</Link>
                         <Link to="/database" style={{
                             color: '#000000',
                             textDecoration: 'none',
@@ -46,6 +57,11 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
                 alignItems: 'center',
                 gap: '15px',
             }}>
+                <div>
+                    <button onClick={() => setDark(!dark)}>
+                        🌙
+                    </button>
+                </div>
                 {!isLoggedIn ? (
                     <>
                         <Link to="/login" style={{
@@ -58,7 +74,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
                         }}>Register</Link>
                     </>
                 ) : (
-                    <button onClick={handleLogout}>Logout</button>
+                    <button onClick={logout}>Logout</button>
                 )}
             </div>
         </nav>

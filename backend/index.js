@@ -1,31 +1,46 @@
 const express = require("express");
+const http = require('http');
+const { Server } = require('socket.io');
 const dotenv = require("dotenv");
-const { connectDB } = require("./config/db");
 const path = require("path");
+const { connectDB } = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
 const gamesRoutes = require("./routes/gamesRoutes");
 const stockfishRoutes = require("./routes/stockfishRoutes");
+const challengeRoutes = require('./routes/challengeRoutes');
+const { setIO, handleSocket } = require('./controllers/challengeController');
+
 const distDir = path.resolve(__dirname, '../frontend/dist');
-dotenv.config();
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+setIO(io);
+io.on('connection', handleSocket);
+
+dotenv.config();
 
 app.use(express.json());
+
 app.use(express.static(distDir, {
-    inndex: false,
+    index: false,
     setHeaders: res => {
         res.set('Cross-Origin-Opener-Policy', 'same-origin');
         res.set('Cross-Origin-Embedder-Policy', 'require-corp');
     }
 }));
 
-app.use("/api", gamesRoutes)
+app.use("/api/games", gamesRoutes)
 app.use("/api/users", userRoutes);
-app.use("/api", stockfishRoutes);
+app.use("/api/stockfish", stockfishRoutes);
+app.use("/api/challenges", challengeRoutes);
 
 app.get('*', (req, res) => {
+    res.set('Cross-Origin-Opener-Policy', 'same-origin');
+    res.set('Cross-Origin-Embedder-Policy', 'require-corp');
     res.sendFile(path.join(distDir, 'index.html'));
 });
 
 connectDB();
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

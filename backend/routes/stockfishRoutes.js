@@ -1,11 +1,10 @@
 const express = require("express");
 const { startStockfish, stopStockfish, useStockfish } = require("../controllers/stockfishController");
+const { authMiddleware } = require("./auth");
 
 const router = express.Router();
 
-router.post("/stockfish/start", startStockfish);
-router.post("/stockfish/stop", stopStockfish);
-router.post("/stockfish", useStockfish);
+router.post("/analyze", authMiddleware, useStockfish);
 
 module.exports = router;
 
