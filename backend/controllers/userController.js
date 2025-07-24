@@ -31,5 +31,9 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser };
+const verifyUser = async (req, res) => {
+    res.json({ _id: req.user._id, name: req.user.name });
+}
+
+module.exports = { registerUser, loginUser, verifyUser };
 

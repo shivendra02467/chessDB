@@ -5,7 +5,22 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         const token = localStorage.getItem('token');
-        return Boolean(token);
+        if (!token)
+            return false;
+        fetch('/api/users/me', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(res => {
+                if (!res.ok) {
+                    localStorage.removeItem('token');
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            });
     });
 
     const login = (token) => {
