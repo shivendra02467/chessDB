@@ -71,7 +71,6 @@ async function fetchGamesByKeywords(searchQuery, page) {
         const query = searchConditions.length > 0 ? { $and: searchConditions } : {};
         const pageNumber = parseInt(page) || 1
         const games = await collection.find(query).sort({ Date: -1 }).skip((pageNumber - 1) * 20).limit(20).toArray();
-        console.log(games);
         return games;
     } catch (error) {
         console.error("Error fetching games:", error);
