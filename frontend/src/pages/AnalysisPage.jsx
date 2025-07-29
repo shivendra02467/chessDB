@@ -327,7 +327,7 @@ const Analysis = () => {
                 </div>
                 <button
                     onClick={goToNextMove}
-                    disabled={game.history().length >= gameData.Moves.length}
+                    disabled={game.history().length >= gameData?.Moves?.length}
                     style={{
                         padding: "5px 15px",
                         cursor: "pointer",

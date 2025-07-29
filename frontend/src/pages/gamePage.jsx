@@ -36,9 +36,9 @@ const Game = () => {
             .then(res => res.json())
             .then(data => {
                 setGameData(prev => ({
-                    ...prev, White: data.challenger, Black: data.acceptor
+                    ...prev, White: data.White, Black: data.Black
                 }))
-                setColor(userName === data.challenger ? 'white' : 'black');
+                setColor(userName === data.White ? 'white' : 'black');
             });
     }, []);
 

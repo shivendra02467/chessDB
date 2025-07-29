@@ -49,6 +49,10 @@ const Navbar = () => {
                             color: '#000000',
                             textDecoration: 'none',
                         }}>Analysis</Link>
+                        <Link to="/mygames" style={{
+                            color: '#000000',
+                            textDecoration: 'none',
+                        }}>MyGames</Link>
                     </>
                 )}
             </div>

@@ -9,6 +9,7 @@ import Database from "./pages/DatabasePage";
 import Navbar from "./components/Navbar";
 import Game from "./pages/gamePage";
 import { useAuth } from "./authContext";
+import MyGames from "./pages/MyGamesPage";
 
 function App() {
     const { isLoggedIn } = useAuth();
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/game/:id" element={isLoggedIn ? <Game /> : <Navigate to="/" />} />
                 <Route path="/database" element={isLoggedIn ? <Database /> : <Navigate to="/" />} />
                 <Route path="/analysis" element={isLoggedIn ? <Analysis /> : <Navigate to="/" />} />
+                <Route path="/mygames" element={isLoggedIn ? <MyGames /> : <Navigate to="/" />} />
             </Routes>
         </div>
     );

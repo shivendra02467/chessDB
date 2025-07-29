@@ -94,7 +94,7 @@ const Play = () => {
                                     textAlign: "center",
                                 }}
                             >
-                                Challenge by {challenge.challenger}{" "}
+                                Challenge by {challenge.White}{" "}
                                 <button onClick={() => acceptChallenge(challenge._id)}>Accept</button>
                             </div>
                         ))

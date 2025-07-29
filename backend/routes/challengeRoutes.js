@@ -3,7 +3,8 @@ const {
     getChallenges,
     getChallenge,
     postChallenge,
-    acceptChallengeHandler
+    acceptChallengeHandler,
+    getGamesByKeywords
 } = require('../controllers/challengeController');
 const { authMiddleware } = require('./auth');
 
@@ -13,5 +14,6 @@ router.get('/', authMiddleware, getChallenges);
 router.get('/:id', authMiddleware, getChallenge);
 router.post('/', authMiddleware, postChallenge);
 router.post('/:id/accept', authMiddleware, acceptChallengeHandler);
+router.post('/me', authMiddleware, getGamesByKeywords);
 
 module.exports = router;

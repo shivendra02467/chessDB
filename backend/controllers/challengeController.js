@@ -3,7 +3,8 @@ const {
     createChallenge,
     listOpenChallenges,
     getChallengeData,
-    acceptChallenge
+    acceptChallenge,
+    fetchGamesByKeywords
 } = require('../models/challengeModel');
 
 let ioInstance;
@@ -54,11 +55,28 @@ const acceptChallengeHandler = async (req, res) => {
     });
 };
 
+async function getGamesByKeywords(req, res) {
+    try {
+        const { page } = req.body;
+        const searchQuery = req.user.name;
+        if (!searchQuery || typeof searchQuery !== "string") {
+            return res.status(400).json({ message: "Invalid or missing keywords in request body" });
+        }
+        const games = await fetchGamesByKeywords(searchQuery, page);
+        res.status(200).json({ games });
+    } catch (error) {
+        console.error("Error in getGamesByKeywords controller:", error);
+        res.status(500).json({ message: "Failed to fetch games" });
+    }
+}
+
+
 module.exports = {
     setIO,
     handleSocket,
     getChallenges,
     getChallenge,
     postChallenge,
-    acceptChallengeHandler
+    acceptChallengeHandler,
+    getGamesByKeywords
 };

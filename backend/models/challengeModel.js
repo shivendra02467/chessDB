@@ -15,10 +15,10 @@ function getChallengesCollection() {
 
 async function createChallenge(challengerName) {
     const challenge = {
-        challenger: challengerName,
-        status: 'open',
-        acceptor: null,
-        moves: []
+        White: challengerName,
+        Status: 'open',
+        Black: null,
+        Moves: []
     };
 
     const result = await getChallengesCollection().insertOne(challenge);
@@ -27,14 +27,14 @@ async function createChallenge(challengerName) {
 
 async function listOpenChallenges() {
     return getChallengesCollection()
-        .find({ status: 'open' })
+        .find({ Status: 'open' })
         .toArray();
 }
 
 async function acceptChallenge(challengeId, acceptorName) {
     const result = await getChallengesCollection().findOneAndUpdate(
-        { _id: toObjectId(challengeId), status: 'open' },
-        { $set: { status: 'accepted', acceptor: acceptorName } },
+        { _id: toObjectId(challengeId), Status: 'open' },
+        { $set: { Status: 'accepted', Black: acceptorName } },
         { returnDocument: 'after' }
     );
     return result;
@@ -50,9 +50,33 @@ async function getChallengeData(challengeId) {
 async function addMoveToChallenge(challengeId, move) {
     const result = await getChallengesCollection().updateOne(
         { _id: toObjectId(challengeId) },
-        { $push: { moves: move } }
+        { $push: { Moves: move } }
     );
     return result.modifiedCount > 0;
+}
+
+async function fetchGamesByKeywords(searchQuery, page) {
+    try {
+        const db = getDB();
+        const collection = db.collection("challenges");
+        const keywords = searchQuery.split(" ").map((keyword) => keyword.trim()).filter(Boolean);
+
+        const searchConditions = keywords.map((keyword) => ({
+            $or: [
+                { White: { $regex: keyword, $options: "i" } },
+                { Black: { $regex: keyword, $options: "i" } },
+            ],
+        }));
+
+        const query = searchConditions.length > 0 ? { $and: searchConditions } : {};
+        const pageNumber = parseInt(page) || 1
+        const games = await collection.find(query).sort({ Date: -1 }).skip((pageNumber - 1) * 20).limit(20).toArray();
+        console.log(games);
+        return games;
+    } catch (error) {
+        console.error("Error fetching games:", error);
+        throw error;
+    }
 }
 
 module.exports = {
@@ -61,5 +85,6 @@ module.exports = {
     getChallengeData,
     createChallenge,
     listOpenChallenges,
-    acceptChallenge
+    acceptChallenge,
+    fetchGamesByKeywords
 };
