@@ -5,8 +5,16 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         const token = localStorage.getItem('token');
-        if (!token)
-            return false;
+        return Boolean(token);
+    });
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setIsLoggedIn(false);
+            return;
+        }
+
         fetch('/api/users/me', {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -15,13 +23,16 @@ export function AuthProvider({ children }) {
             .then(res => {
                 if (!res.ok) {
                     localStorage.removeItem('token');
-                    return false;
+                    setIsLoggedIn(false);
+                } else {
+                    setIsLoggedIn(true);
                 }
-                else {
-                    return true;
-                }
-            });
-    });
+            })
+            .catch(() => {
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+            })
+    }, []);
 
     const login = (token) => {
         localStorage.setItem('token', token);
