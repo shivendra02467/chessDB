@@ -1,10 +1,15 @@
-body {
-    background: white;
-    color: black;
-    transition: background 0.3s ease, color 0.3s ease;
+@import 'tailwindcss';
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+    body {
+        @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-200;
+    }
 }
 
-body.dark {
-    background: #121212;
-    color: white;
+@layer components {
+    .nav-link {
+        @apply text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white transition-colors;
+    }
 }

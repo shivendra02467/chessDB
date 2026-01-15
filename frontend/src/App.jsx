@@ -15,7 +15,7 @@ function App() {
     const { isLoggedIn } = useAuth();
 
     return (
-        <div>
+        <div className="min-h-screen flex flex-col">
             <Navbar />
             <Routes>
                 <Route path="/" element={<Home />} />

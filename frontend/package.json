@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "chess.js": "^1.4.0",
     "jwt-decode": "^4.0.0",
     "react": "^19.0.0",
@@ -11,7 +12,8 @@
     "react-hotkeys-hook": "^5.1.0",
     "react-router-dom": "^7.0.2",
     "socket.io-client": "^4.8.1",
-    "stockfish": "^16.0.0"
+    "stockfish": "^16.0.0",
+    "tailwindcss": "^4.1.18"
   },
   "scripts": {
     "dev": "vite",

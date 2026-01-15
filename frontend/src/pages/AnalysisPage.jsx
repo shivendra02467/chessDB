@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Chessboard } from "react-chessboard";
@@ -214,32 +214,18 @@ const Analysis = () => {
         const evaluation = s?.lines?.[0]?.score || 0;
         const evaluationHeight = Math.abs(evaluation) >= 31900 ? (evaluation > 0 ? 100 : 0) : (50 * (1 + (2 / Math.PI) * Math.atan(evaluation / 384)));
         return (
-            <div
-                style={{
-                    width: "32px",
-                    height: "100%",
-                    position: "relative",
-                }}
-            >
+            <div className="w-8 h-full relative bg-gray-700 rounded-r-md overflow-hidden shadow-md border-l border-gray-600 dark:border-gray-800">
                 <div
+                    className="absolute w-full bg-gray-800 transition-all duration-300 ease-out"
                     style={{
-                        position: "absolute",
                         bottom: `${evaluationHeight}%`,
                         height: `${100 - evaluationHeight}%`,
-                        width: "100%",
-                        background: "#444444",
                     }}
                 />
                 <div
+                    className="absolute bottom-0 w-full bg-gray-200 flex items-end justify-center pb-1 text-[10px] font-bold text-gray-800 z-10 transition-all duration-300 ease-out"
                     style={{
-                        position: "absolute",
-                        bottom: `0%`,
                         height: `${evaluationHeight}%`,
-                        width: "100%",
-                        background: "#bbbbbb",
-                        fontSize: '12px',
-                        color: '#000000',
-                        textAlign: 'center',
                     }}
                 >
                     {(evaluation / 100).toFixed(2)}
@@ -251,14 +237,15 @@ const Analysis = () => {
     const renderGameDetails = () => {
         if (gameDataLoaded) {
             return (
-                <div
-                    style={{
-                        display: 'flex',
-                        width: "600px",
-                        justifyContent: 'space-between',
-                    }}
-                >
-                    <div><strong>White: </strong>{gameData.White}</div><div><strong>Black: </strong>{gameData.Black}</div>
+                <div className="flex w-full max-w-[600px] justify-between text-gray-800 dark:text-gray-200 mb-2 px-1">
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-white border border-gray-400 rounded-full"></span>
+                        <strong className="text-sm md:text-base font-semibold">{gameData.White}</strong>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <strong className="text-sm md:text-base font-semibold">{gameData.Black}</strong>
+                        <span className="w-3 h-3 bg-black rounded-full border border-gray-600"></span>
+                    </div>
                 </div>
             );
         }
@@ -279,116 +266,70 @@ const Analysis = () => {
     };
 
     return (
-        <div
-            style={{
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: 'center',
-                gap: "10px",
-            }}
-        >
+        <div className="flex-1 bg-gray-50 dark:bg-gray-900 flex flex-col items-center py-8 px-4 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-200">
             {renderGameDetails()}
-            < div
-                style={{
-                    display: "flex",
-                    width: "600px",
-                    gap: "10px",
-                }}
-            >
-                <Chessboard
-                    options={Options}
-                />
-                <div>
+            <div className="flex w-full max-w-[600px] h-auto shadow-xl rounded-lg overflow-hidden bg-white dark:bg-gray-800 transition-colors duration-200">
+                <div className="flex-grow aspect-square">
+                    <Chessboard options={Options} />
+                </div>
+                <div className="h-auto">
                     {renderEvaluationBar()}
                 </div>
-            </div >
-            <div
-                style={{
-                    display: 'flex',
-                    width: "600px",
-                    justifyContent: 'space-between',
-                }}
-            >
+            </div>
+            <div className="flex w-full max-w-[600px] justify-between items-center mt-6 mb-8">
                 <button
                     onClick={goToPreviousMove}
                     disabled={game.history().length - 1 < 0}
-                    style={{
-                        padding: "5px 15px",
-                        cursor: "pointer",
-                    }}
+                    className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     Prev
                 </button>
-                <div>
-                    <strong>Move:</strong>{game.history().length - 1 >= 0
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-full border border-transparent dark:border-gray-700">
+                    <strong>Move:</strong>
+                    {game.history().length - 1 >= 0
                         ? ` ${(game.history().length - 1) % 2 ? (game.history().length) / 2 : (game.history().length + 1) / 2}. ${game.history({ verbose: true })[game.history().length - 1].san}`
                         : " Start"}
                 </div>
+
                 <button
                     onClick={goToNextMove}
                     disabled={game.history().length >= gameData?.Moves?.length}
-                    style={{
-                        padding: "5px 15px",
-                        cursor: "pointer",
-                    }}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     Next
                 </button>
             </div>
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: 'center',
-                    gap: "10px",
-                }}
-            >
-                <div
-                    style={{
-                        padding: "5px",
-                        border: "1px solid #888888",
-                        overflowX: "auto",
-                        width: "400px",
-                        height: "200px",
-                    }}
-                >
-                    <strong>PGN of Current Game</strong>
-                    <pre
-                        style={{
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word",
-                            fontSize: "14px",
-                        }}
-                    >
-                        {game.pgn().replace(/^\[.*\]\s*$/gm, '').trim() || "No moves yet"}
-                    </pre>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[800px]">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-40 transition-colors duration-200">
+                    <strong className="text-gray-700 dark:text-gray-200 text-sm mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 block">PGN of Current Game</strong>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <pre className="whitespace-pre-wrap break-words text-xs text-gray-600 dark:text-gray-400 font-mono leading-relaxed">
+                            {game.pgn().replace(/^\[.*\]\s*$/gm, '').trim() || "No moves yet"}
+                        </pre>
+                    </div>
                 </div>
-                <div
-                    style={{
-                        padding: "5px",
-                        border: "1px solid #888888",
-                        overflowX: "auto",
-                        width: "400px",
-                        height: "200px",
-                    }}
-                >
-                    <strong>Engine Lines</strong>
-                    <pre
-                        style={{
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word",
-                            fontSize: "14px",
-                        }}
-                    >
-                        <p>[{s?.lines?.[0]?.score / 100}] {s?.lines?.[0]?.pvSan}</p>
-                        <p>[{s?.lines?.[1]?.score / 100}] {s?.lines?.[1]?.pvSan}</p>
-                        <p>[{s?.lines?.[2]?.score / 100}] {s?.lines?.[2]?.pvSan}</p>
-                    </pre>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-40 transition-colors duration-200">
+                    <strong className="text-gray-700 dark:text-gray-200 text-sm mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 block">Engine Lines</strong>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="text-xs font-mono space-y-2">
+                            {[0, 1, 2].map((i) => (
+                                s?.lines?.[i] && (
+                                    <div key={i} className="flex gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <span className={`font-bold ${s.lines[i].score > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                            [{(s.lines[i].score / 100).toFixed(2)}]
+                                        </span>
+                                        <span className="text-gray-700 dark:text-gray-300 break-all">
+                                            {s.lines[i].pvSan}
+                                        </span>
+                                    </div>
+                                )
+                            ))}
+                            {!s?.lines?.[0] && <span className="text-gray-400 dark:text-gray-500 italic">Calculating...</span>}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

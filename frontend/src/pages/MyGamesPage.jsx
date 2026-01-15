@@ -8,30 +8,31 @@ const MyGames = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
-    const [token,] = useState(() => localStorage.getItem('token'));
+    const [token] = useState(() => localStorage.getItem('token'));
 
     useEffect(() => {
-        document.title = 'MyGames';
+        document.title = "My Games - chessDB";
         fetchGames(1);
     }, []);
 
-    const fetchGames = async (page) => {
+    const fetchGames = async (pageToFetch) => {
         setLoading(true);
         setError("");
         try {
             const response = await fetch(`/api/challenges/me`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ page }),
+                body: JSON.stringify({ page: pageToFetch }),
             });
             const data = await response.json();
             if (!response.ok) {
                 setError(data.message);
             } else {
-                setGames(data.games)
+                setGames(data.games);
             }
         } catch (error) {
             console.error("Error fetching games:", error);
+            setError("Failed to fetch games history.");
         } finally {
             setLoading(false);
         }
@@ -48,51 +49,117 @@ const MyGames = () => {
     };
 
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: "20px",
-            gap: '10px',
-
-        }}>
-            <h1>My Games</h1>
-            <div>
-                {games.length > 0 && (
-                    <button onClick={loadNextPage} disabled={loading}>
-                        {loading ? "Loading..." : "Load Next Page"}
-                    </button>
-                )}
-                {searchQuery && games.length == 0 && <p>No games found</p>}
-                {loading && <p>Loading games...</p>}
-                {error && <p style={{ color: "red" }}>{error}</p>}
+        <div className="flex-1 bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex flex-col items-center py-10 px-4 sm:px-6">
+            <div className="text-center mb-10">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                    My Games
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                    A history of your recent battles.
+                </p>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: 'center' }}>
-                {
-                    games.map((game, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                border: "2px solid #888888",
-                                padding: "15px",
-                                width: "250px",
-                                textAlign: "center",
-                            }}
-                        >
-                            <p><strong>White:</strong> {game.White || "N/A"}</p>
-                            <p><strong>Black:</strong> {game.Black || "N/A"}</p>
+
+            <div className="w-full max-w-7xl">
+                {loading && games.length === 0 && (
+                    <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading your history...</p>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center text-red-600 dark:text-red-400 mb-8 max-w-2xl mx-auto">
+                        {error}
+                    </div>
+                )}
+
+                {!loading && !error && games.length === 0 && (
+                    <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 max-w-2xl mx-auto">
+                        <p className="text-xl text-gray-500 dark:text-gray-400 mb-4">You haven't played any games yet.</p>
+                        <a href="/play" className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            Start a Match
+                        </a>
+                    </div>
+                )}
+
+                {games.length > 0 && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
+                            {games.map((game, index) => (
+                                <div
+                                    key={index}
+                                    className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden relative"
+                                >
+                                    <div className="absolute top-0 right-0 bg-gray-100 dark:bg-gray-700 rounded-bl-xl px-3 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 border-l border-b border-gray-200 dark:border-gray-600">
+                                        MATCH
+                                    </div>
+                                    <div className="p-6 flex-grow space-y-5 mt-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shadow-sm">
+                                                    <span className="text-xs text-black">♔</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">White</span>
+                                                    <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[120px]" title={game.White}>
+                                                        {game.White || "Anonymous"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-px bg-gray-100 dark:bg-gray-700 flex-grow"></div>
+                                            <span className="text-xs text-gray-400 font-medium">VS</span>
+                                            <div className="h-px bg-gray-100 dark:bg-gray-700 flex-grow"></div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center shadow-sm">
+                                                    <span className="text-xs text-white">♚</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Black</span>
+                                                    <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[120px]" title={game.Black}>
+                                                        {game.Black || "Anonymous"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 pt-0">
+                                        <button
+                                            onClick={() => handleViewGame(game)}
+                                            className="w-full py-2.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2 group-hover:border-blue-200 dark:group-hover:border-blue-900"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                            Review Game
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-center pb-10">
                             <button
-                                onClick={() => handleViewGame(game)}
-                                style={{
-                                    padding: "8px 12px",
-                                    cursor: "pointer",
-                                }}
+                                onClick={loadNextPage}
+                                disabled={loading}
+                                className="px-8 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
-                                View Game
+                                {loading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                                        Loading...
+                                    </>
+                                ) : (
+                                    "Load More Games"
+                                )}
                             </button>
                         </div>
-                    ))
-                }
+                    </>
+                )}
             </div>
         </div>
     );

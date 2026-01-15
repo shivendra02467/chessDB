@@ -180,14 +180,15 @@ const Game = () => {
 
     const renderGameDetails = () => {
         return (
-            <div
-                style={{
-                    display: 'flex',
-                    width: "600px",
-                    justifyContent: 'space-between',
-                }}
-            >
-                <div><strong>White: </strong>{gameData.White}</div><div><strong>Black: </strong>{gameData.Black}</div>
+            <div className="flex w-full max-w-[600px] justify-between text-gray-800 dark:text-gray-200 mb-4 px-1">
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-white border border-gray-400 rounded-full shadow-sm"></span>
+                    <strong className="text-sm md:text-base font-semibold">{gameData.White}</strong>
+                </div>
+                <div className="flex items-center gap-2">
+                    <strong className="text-sm md:text-base font-semibold">{gameData.Black}</strong>
+                    <span className="w-3 h-3 bg-gray-900 border border-gray-600 dark:border-gray-400 rounded-full shadow-sm"></span>
+                </div>
             </div>
         );
     };
@@ -203,70 +204,30 @@ const Game = () => {
     };
 
     return (
-        <div
-            style={{
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: 'center',
-                gap: "10px",
-            }}
-        >
+        <div className="flex-1 bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex flex-col items-center py-8 px-4 font-sans text-gray-900 dark:text-gray-100">
             {renderGameDetails()}
-            < div
-                style={{
-                    display: "flex",
-                    width: "600px",
-                    gap: "10px",
-                }}
-            >
-                <Chessboard
-                    options={Options}
-                />
-            </div >
-            <div
-                style={{
-                    display: 'flex',
-                    width: "600px",
-                    justifyContent: 'center',
-                }}
-            >
-                <div>
-                    <strong>Move:</strong>{game.history().length - 1 >= 0
-                        ? ` ${(game.history().length - 1) % 2 ? (game.history().length) / 2 : (game.history().length + 1) / 2}. ${game.history({ verbose: true })[game.history().length - 1].san}`
-                        : " Start"}
-                </div>
+            <div className="flex w-full max-w-[600px] aspect-square shadow-xl rounded-lg overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+                <Chessboard options={Options} />
             </div>
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: 'center',
-                    gap: "10px",
-                }}
-            >
-                <div
-                    style={{
-                        padding: "5px",
-                        border: "1px solid #888888",
-                        overflowX: "auto",
-                        width: "400px",
-                        height: "200px",
-                    }}
-                >
-                    <strong>PGN of Current Game</strong>
-                    <pre
-                        style={{
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word",
-                            fontSize: "14px",
-                        }}
-                    >
+
+            <div className="mt-6 mb-8 px-6 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-200">
+                <strong>Move:</strong>
+                {game.history().length - 1 >= 0
+                    ? ` ${(game.history().length - 1) % 2 ? (game.history().length) / 2 : (game.history().length + 1) / 2}. ${game.history({ verbose: true })[game.history().length - 1].san}`
+                    : " Start"}
+            </div>
+
+            <div className="w-full max-w-[600px] h-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 flex flex-col transition-colors duration-200">
+                <strong className="text-gray-700 dark:text-gray-200 text-sm mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 block">
+                    PGN of Current Game
+                </strong>
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <pre className="whitespace-pre-wrap break-words text-xs text-gray-600 dark:text-gray-400 font-mono leading-relaxed">
                         {game.pgn().replace(/^\[.*\]\s*$/gm, '').trim() || "No moves yet"}
                     </pre>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 
