@@ -6,11 +6,10 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
         proxy: {
-            // ① forward anything beginning with /api → http://localhost:5000
             '/api': {
                 target: 'http://localhost:5000',
                 changeOrigin: true,   // sets Host header to target host
-                secure: false,        // ignore self‑signed SSL certs if using https
+                secure: false,        // ignore self-signed SSL certs if using https
                 // rewrite: path => path.replace(/^\/api/, ''), // optional
             },
         },
